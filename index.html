@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brainwallet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+  :root[data-theme="light"]{
+    --bg:#f4f4f0;--card:#ffffff;--border:#e0e0d8;
+    --text:#111111;--muted:#888;--muted2:#ddd;
+    --accent:#5c8a00;--green:#1a7f3c;--orange:#c04a00;--red:#cc2200;
+    --shadow:0 2px 12px rgba(0,0,0,0.07);
+    --overlay:rgba(0,0,0,0.18);
+  }
+  :root[data-theme="dark"]{
+    --bg:#101010;--card:#191919;--border:#444444;
+    --text:#f5f5f5;--muted:#bdbdbd;--muted2:#555555;
+    --accent:#e8ff47;--green:#00e676;--orange:#ff6b35;--red:#ff3d3d;
+    --shadow:none;
+    --overlay:rgba(0,0,0,0.6);
+  }
+
+  body{background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;transition:background .3s,color .3s}
+  .wrap{width:100%;max-width:420px}
+
+  /* ── Header ── */
+  .top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .brand{font-size:11px;letter-spacing:.3em;color:var(--muted);text-transform:uppercase}
+  .settings-btn{background:var(--card);border:1px solid var(--border);border-radius:99px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all .2s;box-shadow:var(--shadow)}
+  .settings-btn:hover{border-color:var(--accent)}
+
+  h1{font-size:32px;font-weight:700;color:var(--accent);letter-spacing:-.02em;margin-bottom:4px}
+  .sub{font-size:11px;color:var(--muted);margin-bottom:40px;letter-spacing:.05em}
+
+  /* ── Inputs ── */
+  .field{margin-bottom:10px}
+  .field-label{font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:6px;display:block}
+  .input-row{display:flex;gap:8px}
+  input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-family:'Space Mono',monospace;font-size:20px;color:var(--text);outline:none;letter-spacing:.12em;transition:border-color .2s,background .3s;min-width:0;box-shadow:var(--shadow)}
+  input:focus{border-color:var(--accent)}
+  input::placeholder{color:var(--muted);font-size:14px;letter-spacing:.05em}
+  .eye{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0 14px;cursor:pointer;font-size:16px;color:var(--muted);transition:color .2s;flex-shrink:0;box-shadow:var(--shadow)}
+  .eye:hover{color:var(--text)}
+
+  /* ── Barra força ── */
+  .bar-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;margin-top:16px}
+  .bar-label{font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+  .bar-status{font-size:9px;letter-spacing:.1em;color:var(--muted);transition:color .3s}
+  .bar{height:2px;background:var(--muted2);border-radius:99px;margin-bottom:28px;overflow:hidden}
+  .bar-fill{height:100%;width:0%;border-radius:99px;transition:width .35s ease,background .35s ease}
+
+  /* ── Botão ── */
+  .btn{width:100%;padding:15px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:opacity .2s,transform .15s}
+  :root[data-theme="dark"] .btn{color:#000}
+  .btn:hover:not(:disabled){opacity:.88;transform:translateY(-1px)}
+  .btn:active:not(:disabled){transform:translateY(0)}
+  .btn:disabled{opacity:.25;cursor:not-allowed}
+
+  /* ── Loading ── */
+  .loading{display:none;text-align:center;padding:28px 0}
+  .spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 10px}
+  .loading-txt{font-size:10px;color:var(--muted);letter-spacing:.2em}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ── Resultado ── */
+  .result{display:none;margin-top:32px;border-top:1px solid var(--border);padding-top:28px}
+  .pub-label{font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .pub-tag{font-size:8px;padding:2px 8px;border-radius:99px;border:1px solid var(--green);color:var(--green);letter-spacing:.1em}
+  .pub-key{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:8px;padding:16px 18px;font-size:22px;letter-spacing:.15em;cursor:pointer;transition:border-color .2s,background .3s;margin-bottom:6px;text-align:center;color:var(--green);box-shadow:var(--shadow);word-break:break-all}
+  .pub-key:hover{border-color:var(--accent)}
+  .pub-key .prefix-part{color:var(--accent);font-weight:700}
+  .pub-key .dot{color:var(--muted)}
+  .pub-key .hash-part{color:var(--green)}
+  .copy-hint{font-size:9px;color:var(--muted);text-align:right;margin-bottom:28px;letter-spacing:.08em}
+
+  .nostr-block{border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px}
+  .nostr-label{font-size:9px;letter-spacing:.2em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+  .nostr-val{font-size:9px;color:var(--muted);word-break:break-all;line-height:1.8;cursor:pointer;padding:10px 12px;border:1px solid var(--border);border-radius:6px;transition:color .2s,border-color .2s;margin-bottom:16px;background:var(--card);box-shadow:var(--shadow)}
+  .nostr-val:hover{color:var(--text);border-color:var(--accent)}
+
+  .warn{font-size:10px;color:var(--orange);line-height:1.8;border:1px solid;border-color:color-mix(in srgb,var(--orange) 30%,transparent);border-radius:8px;padding:12px 14px;margin-bottom:20px;letter-spacing:.03em}
+  .reset{width:100%;padding:12px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:.1em;transition:border-color .2s,color .2s}
+  .reset:hover{border-color:var(--orange);color:var(--orange)}
+
+  /* ── Toast ── */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--accent);color:#fff;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;padding:9px 20px;border-radius:99px;letter-spacing:.15em;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none}
+  :root[data-theme="dark"] .toast{color:#000}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+
+  /* ── Settings overlay ── */
+  .overlay{position:fixed;inset:0;background:var(--overlay);z-index:100;opacity:0;pointer-events:none;transition:opacity .25s}
+  .overlay.open{opacity:1;pointer-events:all}
+
+  .settings-panel{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:28px 24px 40px;z-index:101;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.67,0);max-width:480px;margin:0 auto}
+  .settings-panel.open{transform:translateY(0);transition:transform .35s cubic-bezier(.34,1.2,.64,1)}
+
+  .panel-handle{width:36px;height:4px;background:var(--border);border-radius:99px;margin:0 auto 24px}
+  .panel-title{font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);margin-bottom:24px}
+
+  .setting-row{margin-bottom:24px}
+  .setting-label{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block}
+
+  .prefix-input{font-size:18px;width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:'Space Mono',monospace;color:var(--text);outline:none;letter-spacing:.12em;transition:border-color .2s;box-shadow:var(--shadow)}
+  .prefix-input:focus{border-color:var(--accent)}
+  .prefix-input::placeholder{color:var(--muted);font-size:14px}
+  .prefix-hint{font-size:9px;color:var(--muted);margin-top:6px;letter-spacing:.05em;min-height:14px}
+
+  /* Theme toggle */
+  .theme-toggle{display:flex;gap:8px}
+  .theme-opt{flex:1;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);cursor:pointer;text-align:center;letter-spacing:.1em;transition:all .2s}
+  .theme-opt.active{border-color:var(--accent);color:var(--accent);background:var(--card)}
+
+  .panel-close{width:100%;margin-top:8px;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;cursor:pointer}
+  :root[data-theme="dark"] .panel-close{color:#000}
+  /* Contraste reforçado para leitura no tema escuro */
+  :root[data-theme="dark"] input::placeholder,
+  :root[data-theme="dark"] textarea::placeholder{color:#bdbdbd;opacity:1}
+  :root[data-theme="dark"] .nostr-val,
+  :root[data-theme="dark"] .strength-note,
+  :root[data-theme="dark"] .strength-disclaimer{color:#d0d0d0}
+  :root[data-theme="dark"] .bar{background:#555555}
+  :root[data-theme="dark"] .settings-btn,
+  :root[data-theme="dark"] .eye{color:#f5f5f5}
+
+
+  /* Interface legível em telas pequenas; não altera a criptografia */
+  body{align-items:flex-start;padding:32px 16px;overflow-x:hidden}
+  .wrap{max-width:480px;min-width:0}
+  .brand{font-size:13px;letter-spacing:.17em}
+  h1{font-size:36px;overflow-wrap:anywhere}
+  .sub{font-size:16px;line-height:1.55;margin-bottom:32px;letter-spacing:0}
+  .field-label,.bar-label,.bar-status,.nostr-label,.setting-label,.panel-title{font-size:14px;letter-spacing:.07em;line-height:1.5}
+  .field-label{margin-bottom:9px}
+  input{font-size:22px;letter-spacing:.04em;width:100%}
+  .btn,.panel-close{font-size:16px;letter-spacing:.05em;min-height:54px}
+  .loading-txt,.warn,.prefix-hint,.reset,.theme-opt,.toast{font-size:14px;line-height:1.6}
+  .warn{padding:15px;overflow-wrap:anywhere}
+  .protocol{border:1px solid var(--border);border-radius:12px;margin-bottom:14px;background:var(--card);overflow:hidden}
+  .protocol summary{list-style:none;cursor:pointer;padding:17px 15px;font-size:19px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+  .protocol summary::-webkit-details-marker{display:none}
+  .protocol .chevron{font-size:24px;color:var(--muted);transition:transform .2s}
+  .protocol[open] .chevron{transform:rotate(180deg)}
+  .protocol-body{padding:4px 14px 18px;min-width:0}
+  .nostr-label{margin-top:12px;margin-bottom:8px}
+  .value-row{display:flex;align-items:stretch;gap:6px;margin-bottom:18px;min-width:0;flex-wrap:wrap}
+  .nostr-val{font-size:16px;line-height:1.65;flex:1 1 100%;min-width:0;margin:0;overflow-wrap:anywhere;word-break:break-word;color:var(--text);cursor:default;padding:12px}
+  .mnemonic{font-size:18px!important;line-height:1.9!important}
+  .secret.masked{filter:blur(7px);user-select:none;-webkit-user-select:none;pointer-events:none}
+  .copy-btn,.reveal-btn{border:1px solid var(--border);background:var(--bg);border-radius:7px;color:var(--text);padding:9px 13px;font:inherit;font-size:14px;cursor:pointer;min-height:40px}
+  .copy-btn:focus-visible,.reveal-btn:focus-visible{outline:2px solid var(--accent)}
+  .word-choices{display:flex;gap:8px;margin:10px 0 12px}
+  .strength-disclaimer{font-size:12px;line-height:1.55;color:var(--muted);margin:-13px 0 22px;}
+  .strength-hint{font-size:13px;line-height:1.5;color:var(--muted);margin:-16px 0 22px;min-height:20px}
+  .word-choices .theme-opt{min-width:0}
+  .settings-btn{width:42px;height:42px}
+  .result{margin-top:24px}
+  @media(max-width:360px){body{padding:24px 12px}h1{font-size:32px}.protocol-body{padding:4px 10px 14px}.protocol summary{font-size:18px}}
+
+.top-actions{display:flex;align-items:center;gap:9px;min-width:0}
+#homeLanguageSelect{max-width:145px;min-width:0;padding:9px 5px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;font-size:14px}
+@media(max-width:380px){#homeLanguageSelect{max-width:112px;font-size:12px}.top-actions{gap:5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-row">
+    <div class="brand">bitcoin · nostr</div>
+    <div class="top-actions"><select id="homeLanguageSelect" aria-label="Language" title="Language">
+      <option value="id">🇮🇩 Bahasa Indonesia</option>
+      <option value="cs">🇨🇿 Čeština</option>
+      <option value="de">🇩🇪 Deutsch</option>
+      <option value="en">🇬🇧 English</option>
+      <option value="es">🇪🇸 Español</option>
+      <option value="fr">🇫🇷 Français</option>
+      <option value="it">🇮🇹 Italiano</option>
+      <option value="nl">🇳🇱 Nederlands</option>
+      <option value="pl">🇵🇱 Polski</option>
+      <option value="pt">🇧🇷 Português</option>
+      <option value="ro">🇷🇴 Română</option>
+      <option value="sv">🇸🇪 Svenska</option>
+      <option value="tr">🇹🇷 Türkçe</option>
+      <option value="ru">🇷🇺 Русский</option>
+      <option value="uk">🇺🇦 Українська</option>
+      <option value="ar">🇸🇦 العربية</option>
+      <option value="hi">🇮🇳 हिन्दी</option>
+      <option value="ko">🇰🇷 한국어</option>
+      <option value="zh">🇨🇳 中文</option>
+      <option value="ja">🇯🇵 日本語</option>
+</select><button class="settings-btn" onclick="openSettings()">⚙</button></div>
+  </div>
+  <h1>Brainwallet</h1>
+  <p class="sub">uma frase secreta → suas chaves Bitcoin e Nostr</p>
+
+  <!-- Senha -->
+  <div class="field">
+    <label class="field-label">senha secreta</label>
+    <div class="input-row">
+      <input type="password" id="phrase" placeholder="Digite sua senha secreta"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" maxlength="64"/>
+      <button class="eye" id="eye">👁</button>
+    </div>
+  </div>
+
+  <!-- Força -->
+  <div class="bar-row">
+    <span class="bar-label">força</span>
+    <span class="bar-status" id="status">—</span>
+  </div>
+  <div class="bar"><div class="bar-fill" id="fill"></div></div>
+  <p id="strengthHint" class="strength-hint" aria-live="polite"></p>
+  <p class="strength-disclaimer">Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.</p>
+
+  <button class="btn" id="deriveBtn" disabled>→ Gerar Chave</button>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-txt">derivando chaves · processando</div>
+  </div>
+
+  <div class="result" id="result">
+    <details class="protocol" open>
+      <summary>₿ &nbsp; Bitcoin <span class="chevron">⌄</span></summary>
+      <div class="protocol-body">
+        <div class="nostr-label">Endereço SegWit BIP84</div>
+        <div class="value-row"><div class="nostr-val" id="btcSegwit"></div><button class="copy-btn" onclick="copyKey('btcSegwit')" aria-label="Copiar endereço SegWit">Copiar</button></div>
+        <div class="nostr-label">Endereço legado</div>
+        <div class="value-row"><div class="nostr-val" id="btcLegacy"></div><button class="copy-btn" onclick="copyKey('btcLegacy')" aria-label="Copiar endereço legado">Copiar</button></div>
+        <div class="nostr-label">Chave privada WIF · não compartilhe</div>
+        <div class="value-row"><div class="nostr-val secret masked" id="btcWif"></div><button class="reveal-btn" onclick="toggleSecret('btcWif',this)" aria-label="Revelar chave privada">Mostrar</button><button class="copy-btn" onclick="copySecret('btcWif')">Copiar</button></div>
+        <div class="nostr-label">Frase de recuperação BIP39 · não compartilhe</div>
+        <div class="word-choices"><button class="theme-opt active" id="words12" type="button">12 palavras</button><button class="theme-opt" id="words24" type="button">24 palavras</button></div>
+        <div class="value-row"><div class="nostr-val secret masked mnemonic" id="mnemonicWords"></div><button class="reveal-btn" onclick="toggleSecret('mnemonicWords',this)">Mostrar</button><button class="copy-btn" onclick="copySecret('mnemonicWords')">Copiar</button></div>
+        <div class="prefix-hint">As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.</div>
+      </div>
+    </details>
+    <details class="protocol">
+      <summary>◈ &nbsp; Nostr <span class="chevron">⌄</span></summary>
+      <div class="protocol-body">
+        <div class="nostr-label">Identidade pública · npub</div>
+        <div class="value-row"><div class="nostr-val" id="npub"></div><button class="copy-btn" onclick="copyKey('npub')">Copiar</button></div>
+        <div class="nostr-label">Chave privada · nsec · não compartilhe</div>
+        <div class="value-row"><div class="nostr-val secret masked" id="nsec"></div><button class="reveal-btn" onclick="toggleSecret('nsec',this)">Mostrar</button><button class="copy-btn" onclick="copySecret('nsec')">Copiar</button></div>
+      </div>
+    </details>
+    <div class="warn" role="note" aria-label="Segurança">
+      <strong>Segurança</strong><br>
+      • Use uma senha longa, aleatória e exclusiva.<br>
+      • A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.<br>
+      • Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.<br>
+      • Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.<br>
+      • Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.
+    </div>
+    <button class="reset" onclick="resetApp()">← nova senha</button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="overlay" onclick="closeSettings()"></div>
+<div class="settings-panel" id="settingsPanel">
+  <div class="panel-handle"></div>
+  <div class="panel-title">configurações</div>
+
+  <div class="setting-row">
+    <label class="setting-label">aparência</label>
+    <div class="theme-toggle">
+      <button class="theme-opt active" id="optLight" onclick="setTheme('light')">☀ claro</button>
+      <button class="theme-opt" id="optDark" onclick="setTheme('dark')">☾ escuro</button>
+    </div>
+  </div>
+
+  <div class="setting-row">
+    <label class="setting-label" data-i18n="language">idioma</label>
+    <select id="languageSelect" aria-label="Idioma" style="width:100%;padding:13px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font:inherit;font-size:16px">
+      <option value="id">🇮🇩 Bahasa Indonesia</option>
+      <option value="cs">🇨🇿 Čeština</option>
+      <option value="de">🇩🇪 Deutsch</option>
+      <option value="en">🇬🇧 English</option>
+      <option value="es">🇪🇸 Español</option>
+      <option value="fr">🇫🇷 Français</option>
+      <option value="it">🇮🇹 Italiano</option>
+      <option value="nl">🇳🇱 Nederlands</option>
+      <option value="pl">🇵🇱 Polski</option>
+      <option value="pt">🇧🇷 Português</option>
+      <option value="ro">🇷🇴 Română</option>
+      <option value="sv">🇸🇪 Svenska</option>
+      <option value="tr">🇹🇷 Türkçe</option>
+      <option value="ru">🇷🇺 Русский</option>
+      <option value="uk">🇺🇦 Українська</option>
+      <option value="ar">🇸🇦 العربية</option>
+      <option value="hi">🇮🇳 हिन्दी</option>
+      <option value="ko">🇰🇷 한국어</option>
+      <option value="zh">🇨🇳 中文</option>
+      <option value="ja">🇯🇵 日本語</option>
+</select>
+  </div>
+  <p style="font-size:12px;line-height:1.5;color:var(--muted);margin:8px 0 14px">All available languages have complete registered interface translations. / Todos os idiomas disponíveis possuem as traduções cadastradas da interface.</p>
+  <button class="panel-close" onclick="closeSettings()">fechar</button>
+</div>
+
+<div class="toast" id="toast">copiado</div>
+
+<script>
+// ── Tema ──────────────────────────────────────────────────────────────────
+let isDark = false;
+
+function setTheme(t){
+  isDark = t==='dark';
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('optLight').classList.toggle('active', !isDark);
+  document.getElementById('optDark').classList.toggle('active', isDark);
+  sessionStorage.setItem('nel_theme', t);
+}
+
+// ── Settings panel ────────────────────────────────────────────────────────
+function openSettings(){ 
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('settingsPanel').classList.add('open');
+}
+function closeSettings(){
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('settingsPanel').classList.remove('open');
+}
+
+// ── secp256k1 puro BigInt ─────────────────────────────────────────────────
+const _P  = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2Fn;
+const _N  = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n;
+const _Gx = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798n;
+const _Gy = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8n;
+
+function _mod(a,m=_P){return((a%m)+m)%m;}
+function _inv(a,m=_P){let[r,s,t,u]=[a,1n,m,0n];while(t>0n){const q=r/t;[r,s,t,u]=[t,u,r-q*t,s-q*u];}return _mod(s,m);}
+function _add(A,B){
+  if(!A)return B;if(!B)return A;
+  const[x1,y1]=A,[x2,y2]=B;
+  if(x1===x2&&y1===y2){const l=_mod(3n*x1*x1*_inv(2n*y1));const x=_mod(l*l-2n*x1);return[x,_mod(l*(x1-x)-y1)];}
+  if(x1===x2)return null;
+  const l=_mod((y2-y1)*_inv(x2-x1));const x=_mod(l*l-x1-x2);return[x,_mod(l*(x1-x)-y1)];
+}
+function _mul(k,pt=[_Gx,_Gy]){let R=null,Q=pt;while(k>0n){if(k&1n)R=_add(R,Q);Q=_add(Q,Q);k>>=1n;}return R;}
+function _toBytes32(n){const h=n.toString(16).padStart(64,'0');return Uint8Array.from(h.match(/.{2}/g).map(b=>parseInt(b,16)));}
+function _fromBytes(b){return b.reduce((a,v)=>(a<<8n)|BigInt(v),0n);}
+
+function getPublicKeyBytes(privBytes){
+  const k=_fromBytes(privBytes);
+  if(k<=0n||k>=_N) throw new Error('Chave privada fora do intervalo secp256k1');
+  const[x]=_mul(k);
+  return _toBytes32(x);
+}
+
+// ── bech32 ────────────────────────────────────────────────────────────────
+const _BC='qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+const _BG=[0x3b6a57b2,0x26508e6d,0x1ea119fa,0x3d4233dd,0x2a1462b3];
+function _pm(v){let c=1;for(const d of v){const t=c>>25;c=(c&0x1ffffff)<<5^d;for(let i=0;i<5;i++)if((t>>i)&1)c^=_BG[i];}return c;}
+function _he(h){const r=[];for(let i=0;i<h.length;i++)r.push(h.charCodeAt(i)>>5);r.push(0);for(let i=0;i<h.length;i++)r.push(h.charCodeAt(i)&31);return r;}
+function _bcs(hrp,d){const p=_pm([..._he(hrp),...d,0,0,0,0,0,0])^1;return Array.from({length:6},(_,i)=>(p>>(5*(5-i)))&31);}
+function _cb(data,f,t,pad=true){let a=0,b=0;const r=[],m=(1<<t)-1;for(const v of data){a=(a<<f)|v;b+=f;while(b>=t){b-=t;r.push((a>>b)&m);}}if(pad&&b>0)r.push((a<<(t-b))&m);return r;}
+function toBech32(hrp,bytes){const d=_cb(Array.from(bytes),8,5);return hrp+'1'+[...d,..._bcs(hrp,d)].map(x=>_BC[x]).join('');}
+
+// ── Bitcoin: hash160, Base58Check e endereços SegWit ───────────────────────
+function hexToBytes(hex){return Uint8Array.from(hex.match(/.{2}/g)||[],x=>parseInt(x,16));}
+function concatBytes(...arrays){
+  const out=new Uint8Array(arrays.reduce((n,a)=>n+a.length,0));let off=0;
+  for(const a of arrays){out.set(a,off);off+=a.length;}return out;
+}
+async function sha256(bytes){
+  return new Uint8Array(await crypto.subtle.digest('SHA-256',bytes));
+}
+async function hash160(bytes){
+  if(!window.CryptoJS) await cryptoJsReady;
+  if(!window.CryptoJS) throw new Error('Biblioteca de hash Bitcoin não carregou. Verifique sua conexão.');
+  const sha=await sha256(bytes);
+  const wa=CryptoJS.lib.WordArray.create(sha);
+  const hex=CryptoJS.RIPEMD160(wa).toString();
+  return hexToBytes(hex);
+}
+const _B58='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+function base58(bytes){
+  let n=_fromBytes(bytes),out='';
+  while(n>0n){const r=Number(n%58n);out=_B58[r]+out;n/=58n;}
+  for(let i=0;i<bytes.length&&bytes[i]===0;i++)out='1'+out;
+  return out;
+}
+async function base58Check(payload){
+  const h1=await sha256(payload),h2=await sha256(h1);
+  return base58(concatBytes(payload,h2.slice(0,4)));
+}
+async function bitcoinAddresses(privBytes){
+  const k=_fromBytes(privBytes),[x,y]=_mul(k);
+  const pub=concatBytes(new Uint8Array([y&1n?3:2]),_toBytes32(x));
+  const h=await hash160(pub);
+  const legacy=await base58Check(concatBytes(new Uint8Array([0x00]),h));
+  const witnessData=[0,..._cb(h,8,5)];
+  const segwit='bc1'+[...witnessData,..._bcs('bc',witnessData)].map(v=>_BC[v]).join('');
+  const wif=await base58Check(concatBytes(new Uint8Array([0x80]),privBytes,new Uint8Array([0x01])));
+  return {legacy,segwit,wif};
+}
+
+// Biblioteca RIPEMD-160 necessária para endereços Bitcoin.
+// A promessa é definida antes de qualquer chamada a hash160.
+const cryptoJsReady = new Promise((resolve,reject)=>{
+  const script=document.createElement('script');
+  script.src='https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js';
+  script.onload=()=>window.CryptoJS?.RIPEMD160?resolve():reject(new Error('RIPEMD-160 indisponível'));
+  script.onerror=()=>reject(new Error('Não foi possível carregar a biblioteca Bitcoin. Verifique a conexão.'));
+  document.head.appendChild(script);
+});
+cryptoJsReady.catch(()=>{});
+
+// ── argon2 ────────────────────────────────────────────────────────────────
+// Argon2id original Numeroeletras v1: parâmetros imutáveis para compatibilidade.
+// Sem fallback: uma falha de carregamento deve falhar explicitamente.
+const argon2Ready = new Promise((resolve,reject)=>{
+  const script=document.createElement('script');
+  script.src='https://cdn.jsdelivr.net/npm/argon2-browser@1.18.0/dist/argon2-bundled.min.js';
+  script.onload=()=>window.argon2?resolve(window.argon2):reject(new Error('Argon2id indisponível'));
+  script.onerror=()=>reject(new Error('Não foi possível carregar Argon2id. Verifique a conexão.'));
+  document.head.appendChild(script);
+});
+// Evita aviso de rejeição não tratada enquanto o usuário não clica em gerar.
+argon2Ready.catch(()=>{});
+async function argon2Derive(phrase){
+  const a=await argon2Ready;
+  const enc=new TextEncoder();
+  const res=await a.hash({
+    pass:enc.encode(phrase), salt:enc.encode('numeroeletras-nostr-v1'),
+    time:3,mem:65536,hashLen:32,parallelism:1,type:a.ArgonType.Argon2id
+  });
+  return new Uint8Array(res.hash);
+}
+
+// Avaliação heurística conservadora; não mede entropia criptográfica.
+function assessPassword(value){
+  if(!value)return {level:-1,hint:''};
+  // Avaliação heurística de interface, não uma medição de entropia.
+  // Não normalizar a senha para derivação: apenas analisar uma cópia.
+  const s=value.normalize('NFKC');
+  const low=s.toLocaleLowerCase('pt-BR');
+  const plain=low.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[@4]/g,'a').replace(/[0]/g,'o').replace(/[1!]/g,'i').replace(/[3]/g,'e').replace(/[5$]/g,'s');
+  const common=['nada','senha','password','passphrase','admin','qwerty','abc','abcd','1234','123456','123456789','bitcoin','nostr','brainwallet','numeroeletras','letmein','iloveyou','welcome','teste','test','amor','deus','brasil','secret','segredo'];
+  const hits=common.filter(w=>plain.includes(w));
+  const longest=hits.reduce((m,w)=>Math.max(m,w.length),0);
+  const fullCommon=hits.some(w=>plain===w);
+  const sequences=/(?:0123|1234|2345|3456|4567|5678|6789|7890|abcd|bcde|cdef|qwer|asdf|zxcv)/i.test(s);
+  const runs=/(.)\1{3,}/u.test(s);
+  const types=[/[a-z]/.test(s),/[A-Z]/.test(s),/\d/.test(s),/[^a-zA-Z0-9]/.test(s)].filter(Boolean).length;
+  const unique=new Set([...s]).size;
+  const repeated=unique<=Math.max(3,Math.floor(s.length/3));
+  let level=0;
+  if(s.length>=8)level=1;
+  if(s.length>=12 && types>=2 && unique>=8)level=2;
+  if(s.length>=16 && types>=3 && unique>=11)level=3;
+  if(s.length>=24 && types>=3 && unique>=15)level=4;
+  if(s.length>=30 && types>=2 && unique>=18)level=4;
+  // Penalizar padrões de acordo com seu peso na senha inteira,
+  // não desclassificar uma senha longa por conter uma palavra curta.
+  if(fullCommon || repeated)level=0;
+  else {
+    const fraction=longest/s.length;
+    if(fraction>=0.65)level=Math.min(level,1);
+    else if(fraction>=0.35)level=Math.min(level,2);
+    else if(longest>0)level=Math.max(0,level-1);
+    // Padrões impedem uma avaliação alta, mas não reduzem o nível já
+    // alcançado apenas porque foram acrescentados caracteres repetidos.
+    if(sequences || runs)level=Math.min(level,2);
+    if(runs && s.length<16)level=Math.min(level,1);
+  }
+  if(s.length<8)level=0;
+  let hint='Estimativa apenas; não garante segurança.';
+  if(fullCommon || repeated || s.length<8)hint='Evite senhas comuns, curtas ou repetitivas.';
+  else if(level<=1)hint='Use uma frase mais longa e imprevisível.';
+  else if(level===2)hint='Evite padrões e aumente a imprevisibilidade.';
+  return {level,hint};
+}
+
+let _pubBytes=null;
+
+// ── UI ────────────────────────────────────────────────────────────────────
+const phraseEl  = document.getElementById('phrase');
+const eyeBtn    = document.getElementById('eye');
+const deriveBtn = document.getElementById('deriveBtn');
+const loadingEl = document.getElementById('loading');
+const resultEl  = document.getElementById('result');
+const fillEl    = document.getElementById('fill');
+const statusEl  = document.getElementById('status');
+
+function clearResult(){
+  if(resultEl.style.display==='block'){
+    resultEl.style.display='none';
+    document.getElementById('btcSegwit').textContent='';
+    document.getElementById('btcLegacy').textContent='';
+    document.getElementById('btcWif').textContent='';
+    document.getElementById('mnemonicWords').textContent='';
+    document.getElementById('npub').textContent='';
+    document.getElementById('nsec').textContent='';
+    deriveBtn.style.display='block';
+    _pubBytes=null;_argonOutput=null;hideSecrets();
+  }
+}
+
+phraseEl.addEventListener('input',()=>{
+  clearResult();
+  const v=phraseEl.value;
+  const assessment=assessPassword(v);
+  const labels=['muito fraca','fraca','razoável','forte','muito forte'].map(tr);
+  const colors=['#cc2200','#c04a00','#a07800','#1a7f3c','#12622e'];
+  const level=assessment.level;
+  fillEl.style.width=level<0?'0%':[8,25,50,75,100][level]+'%';
+  fillEl.style.background=level<0?'var(--muted2)':colors[level];
+  statusEl.style.color=level<0?'var(--muted)':colors[level];
+  statusEl.textContent=level<0?'—':labels[level];
+  document.getElementById('strengthHint').textContent=tr(assessment.hint);
+  deriveBtn.disabled=v.length<4;
+});
+
+
+eyeBtn.addEventListener('click',()=>{
+  const show=phraseEl.type==='password';
+  phraseEl.type=show?'text':'password';
+  eyeBtn.textContent=show?'🙈':'👁';
+});
+
+deriveBtn.addEventListener('click',async()=>{
+  const phrase=phraseEl.value;
+  if(phrase.length<4)return;
+  deriveBtn.style.display='none';
+  loadingEl.style.display='block';
+  await new Promise(r=>setTimeout(r,30));
+  try{
+    // Apenas Argon2id; preserva a chave pública original do caminho Argon2id.
+    // Limite de espera para navegadores/visualizadores que bloqueiam bibliotecas.
+    // Não altera o algoritmo, seus parâmetros nem o material derivado.
+    let timeoutId;
+    let privBytes;
+    try {
+      privBytes=await Promise.race([
+        argon2Derive(phrase),
+        new Promise((_,reject)=>{
+          timeoutId=setTimeout(()=>reject(new Error(
+            currentLanguage==='pt'
+              ? 'A geração demorou demais. Abra o arquivo no Google Chrome e tente novamente.'
+              : 'Key generation timed out. Open this file in Google Chrome and try again.'
+          )),30000);
+        })
+      ]);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    _argonOutput=new Uint8Array(privBytes);
+    const scalar=_mod(_fromBytes(privBytes),_N-1n)+1n;
+    privBytes=_toBytes32(scalar);
+    _pubBytes=getPublicKeyBytes(privBytes);
+    await renderBitcoinMnemonic();
+    const btc=null;
+    document.getElementById('npub').textContent=toBech32('npub',_pubBytes);
+    document.getElementById('nsec').textContent=toBech32('nsec',privBytes);
+    loadingEl.style.display='none';
+    hideSecrets();
+    resultEl.style.display='block';
+  }catch(e){
+    console.error(e);
+    loadingEl.style.display='none';
+    deriveBtn.style.display='block';
+    alert('Erro: '+e.message);
+  }
+});
+
+function toggleSecret(id,button){
+  const el=document.getElementById(id);
+  const hidden=el.classList.toggle('masked');
+  button.dataset.revealed=String(!hidden);button.textContent=hidden?tr('Mostrar'):tr('Ocultar');
+}
+function copySecret(id){
+  if(!confirm(tr('Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?')))return;
+  copyKey(id);
+}
+function hideSecrets(){
+  for(const el of document.querySelectorAll('.secret'))el.classList.add('masked');
+  for(const btn of document.querySelectorAll('.reveal-btn')){btn.dataset.revealed='false';btn.textContent=tr('Mostrar');}
+}
+// Compatível também com arquivos HTML locais no Android, onde navigator.clipboard
+// pode estar indisponível. O fallback é executado diretamente após o toque.
+function legacyCopy(value){
+  const area=document.createElement('textarea');
+  area.value=value;
+  area.setAttribute('readonly','');
+  area.style.cssText='position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;z-index:-1';
+  document.body.appendChild(area);
+  const selection=document.getSelection();
+  const oldRange=selection && selection.rangeCount ? selection.getRangeAt(0).cloneRange() : null;
+  const active=document.activeElement;
+  area.focus();area.select();area.setSelectionRange(0,area.value.length);
+  let ok=false;
+  try{ok=document.execCommand('copy');}catch(e){ok=false;}
+  area.remove();
+  if(selection){selection.removeAllRanges();if(oldRange)selection.addRange(oldRange);}
+  if(active && active.focus)active.focus({preventScroll:true});
+  return ok;
+}
+function copyKey(id){
+  const el=document.getElementById(id);
+  const value=el && el.textContent;
+  if(!value){alert(tr('Nenhum conteúdo disponível para copiar.'));return;}
+  // Primeiro tenta o método síncrono: preserva a ativação do usuário no Android.
+  if(legacyCopy(value)){showToast();return;}
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(value).then(showToast).catch(()=>{
+      alert(tr('Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.'));
+    });
+  }else{
+    alert(tr('Este navegador não permite copiar automaticamente a partir deste arquivo local.'));
+  }
+}
+function showToast(){
+  const t=document.getElementById('toast');
+  t.textContent=tr('Copiado');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+function resetApp(){
+  phraseEl.value='';
+  phraseEl.type='password';eyeBtn.textContent='👁';
+  fillEl.style.width='0%';statusEl.textContent='—';statusEl.style.color='var(--muted)';document.getElementById('strengthHint').textContent='';
+  deriveBtn.disabled=true;deriveBtn.style.display='block';
+  resultEl.style.display='none';loadingEl.style.display='none';
+  document.getElementById('btcSegwit').textContent='';
+  document.getElementById('btcLegacy').textContent='';
+  document.getElementById('btcWif').textContent='';
+  document.getElementById('npub').textContent='';
+  document.getElementById('nsec').textContent='';
+  _pubBytes=null;_argonOutput=null;hideSecrets();
+  document.getElementById('mnemonicWords').textContent='';
+  phraseEl.focus();
+}
+
+// ── Restaurar cache ───────────────────────────────────────────────────────
+const _ct=sessionStorage.getItem('nel_theme');
+if(_ct){setTheme(_ct);}
+
+// BIP39 determinístico, separado das chaves Nostr originais.
+// A frase BIP39 representa uma carteira Bitcoin distinta da antiga derivação direta.
+let _argonOutput=null, _wordCount=12, _wordsPromise;
+function getBip39Words(){
+  if(!_wordsPromise) _wordsPromise=fetch('https://raw.githubusercontent.com/bitcoin/bips/master/bip-0039/english.txt')
+    .then(r=>{if(!r.ok)throw Error('Lista BIP39 indisponível');return r.text()})
+    .then(t=>{const w=t.trim().split(/\s+/);if(w.length!==2048||w[0]!=='abandon'||w[2047]!=='zoo')throw Error('Lista BIP39 inválida');return w})
+    .catch(e=>{_wordsPromise=null;throw e});
+  return _wordsPromise;
+}
+function bitString(bytes){return Array.from(bytes,b=>b.toString(2).padStart(8,'0')).join('')}
+async function makeMnemonic(root,count){
+  const enc=new TextEncoder(),list=await getBip39Words();
+  // Domain separation: 12 and 24 word wallets are intentionally different.
+  const entropyFull=await sha256(concatBytes(enc.encode('Brainwallet-BIP39-v1-'+count+'\0'),root));
+  const ent=entropyFull.slice(0,count===12?16:32);
+  const bits=bitString(ent)+bitString(await sha256(ent)).slice(0,ent.length/4);
+  return bits.match(/.{11}/g).map(x=>list[parseInt(x,2)]).join(' ');
+}
+async function hmac512(key,data){const k=await crypto.subtle.importKey('raw',key,{name:'HMAC',hash:'SHA-512'},false,['sign']);return new Uint8Array(await crypto.subtle.sign('HMAC',k,data))}
+function ser32(i){return Uint8Array.of((i>>>24)&255,(i>>>16)&255,(i>>>8)&255,i&255)}
+function compressedPub(k){const [x,y]=_mul(_fromBytes(k));return concatBytes(Uint8Array.of(y&1n?3:2),_toBytes32(x))}
+async function childKey(parent,index){
+ const data=concatBytes(index>=0x80000000?concatBytes(Uint8Array.of(0),parent.key):compressedPub(parent.key),ser32(index));
+ const I=await hmac512(parent.chain,data),il=_fromBytes(I.slice(0,32));
+ if(il>=_N)throw Error('Derivação BIP32 inválida');
+ const k=(il+_fromBytes(parent.key))%_N;if(!k)throw Error('Chave BIP32 inválida');
+ return {key:_toBytes32(k),chain:I.slice(32)};
+}
+async function bip84Key(m){
+ const enc=new TextEncoder();
+ const key=await crypto.subtle.importKey('raw',enc.encode(m.normalize('NFKD')),'PBKDF2',false,['deriveBits']);
+ const seed=new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode('mnemonic'),iterations:2048,hash:'SHA-512'},key,512));
+ const I=await hmac512(enc.encode('Bitcoin seed'),seed);
+ let node={key:I.slice(0,32),chain:I.slice(32)};
+ if(_fromBytes(node.key)===0n||_fromBytes(node.key)>=_N)throw Error('Chave mestra BIP32 inválida');
+ for(const i of [0x80000054,0x80000000,0x80000000,0,0])node=await childKey(node,i);
+ return node.key;
+}
+async function renderBitcoinMnemonic(){
+ if(!_argonOutput)return;
+ const mnemonic=await makeMnemonic(_argonOutput,_wordCount);
+ const key=await bip84Key(mnemonic);
+ const btc=await bitcoinAddresses(key);
+ document.getElementById('mnemonicWords').textContent=mnemonic;
+ document.getElementById('btcSegwit').textContent=btc.segwit;
+ document.getElementById('btcLegacy').textContent=btc.legacy;
+ document.getElementById('btcWif').textContent=btc.wif;
+}
+for(const [id,count] of [['words12',12],['words24',24]]){
+ document.getElementById(id).addEventListener('click',async()=>{
+  if(_wordCount===count)return;
+  _wordCount=count;
+  document.getElementById('words12').classList.toggle('active',count===12);
+  document.getElementById('words24').classList.toggle('active',count===24);
+  if(_argonOutput){
+   hideSecrets();
+   try{await renderBitcoinMnemonic()}catch(e){alert('Erro BIP39: '+e.message)}
+  }
+ });
+}
+
+// Interface localization only: never translate or normalize passwords, keys, or BIP39 words.
+const translations = {"en":{"uma frase secreta → suas chaves Bitcoin e Nostr":"one secret phrase → your Bitcoin and Nostr keys","senha secreta":"secret password","Digite sua senha secreta":"Enter your secret password","força":"strength","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Important: password strength is only an estimate. Ratings and bar percentages are visual indicators, not security probabilities, and do not guarantee protection against attacks.","→ Gerar Chave":"→ Generate keys","derivando chaves · processando":"deriving keys · processing","Endereço SegWit BIP84":"SegWit BIP84 address","Endereço legado":"Legacy address","Chave privada WIF · não compartilhe":"WIF private key · do not share","Frase de recuperação BIP39 · não compartilhe":"BIP39 recovery phrase · do not share","12 palavras":"12 words","24 palavras":"24 words","Copiar":"Copy","Mostrar":"Show","Ocultar":"Hide","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"Public identity · npub","Chave privada · nsec · não compartilhe":"Private key · nsec · do not share","Segurança":"Security","← nova senha":"← new password","configurações":"settings","aparência":"appearance","☀ claro":"☀ light","☾ escuro":"☾ dark","fechar":"close","idioma":"language","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"very weak","fraca":"weak","razoável":"fair","forte":"strong","muito forte":"very strong","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"es":{"uma frase secreta → suas chaves Bitcoin e Nostr":"una frase secreta → tus claves Bitcoin y Nostr","senha secreta":"contraseña secreta","Digite sua senha secreta":"Escribe tu contraseña secreta","força":"seguridad","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Importante: la seguridad de la contraseña es solo una estimación. Las categorías y porcentajes de la barra son indicadores visuales, no probabilidades de seguridad ni garantías contra ataques.","→ Gerar Chave":"→ Generar claves","derivando chaves · processando":"derivando claves · procesando","Endereço SegWit BIP84":"Dirección SegWit BIP84","Endereço legado":"Dirección heredada","Chave privada WIF · não compartilhe":"Clave privada WIF · no compartir","Frase de recuperação BIP39 · não compartilhe":"Frase de recuperación BIP39 · no compartir","12 palavras":"12 palabras","24 palavras":"24 palabras","Copiar":"Copiar","Mostrar":"Mostrar","Ocultar":"Ocultar","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"Las palabras se derivan de la contraseña, no se generan aleatoriamente. La cartera BIP39 es independiente de las claves Nostr.","Identidade pública · npub":"Identidad pública · npub","Chave privada · nsec · não compartilhe":"Clave privada · nsec · no compartir","Segurança":"Seguridad","← nova senha":"← nueva contraseña","configurações":"configuración","aparência":"apariencia","☀ claro":"☀ claro","☾ escuro":"☾ oscuro","fechar":"cerrar","idioma":"idioma","• Use uma senha longa, aleatória e exclusiva.":"• Usa una contraseña larga, aleatoria y exclusiva.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• La misma contraseña y los mismos parámetros generan las mismas claves.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Nunca compartas tu contraseña, claves privadas ni palabras de recuperación.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Quien tenga tus claves privadas puede controlar tus bitcoins.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• Esta aplicación es experimental. No uses fondos reales hasta validar su seguridad.","muito fraca":"muy débil","fraca":"débil","razoável":"aceptable","forte":"fuerte","muito forte":"muy fuerte","Estimativa apenas; não garante segurança.":"Solo una estimación; no garantiza seguridad.","Evite senhas comuns, curtas ou repetitivas.":"Evita contraseñas comunes, cortas o repetitivas.","Use uma frase mais longa e imprevisível.":"Usa una frase más larga e impredecible.","Evite padrões e aumente a imprevisibilidade.":"Evita patrones y aumenta la imprevisibilidad.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"Esta información es secreta. Copiarla puede exponerla a otras aplicaciones. ¿Continuar?","Nenhum conteúdo disponível para copiar.":"No hay contenido para copiar.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"No se pudo copiar automáticamente. Abre el archivo en un contexto seguro o selecciona el texto manualmente.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"Este navegador no permite copiar automáticamente desde este archivo local.","Copiado":"Copiado"},"fr":{"uma frase secreta → suas chaves Bitcoin e Nostr":"une phrase secrète → vos clés Bitcoin et Nostr","senha secreta":"mot de passe secret","Digite sua senha secreta":"Saisissez votre mot de passe secret","força":"robustesse","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Important : la robustesse du mot de passe est une estimation. Les catégories et pourcentages sont uniquement visuels, pas des probabilités de sécurité ni des garanties contre les attaques.","→ Gerar Chave":"→ Générer les clés","derivando chaves · processando":"dérivation des clés · traitement","Endereço SegWit BIP84":"Adresse SegWit BIP84","Endereço legado":"Adresse historique","Chave privada WIF · não compartilhe":"Clé privée WIF · ne pas partager","Frase de recuperação BIP39 · não compartilhe":"Phrase de récupération BIP39 · ne pas partager","12 palavras":"12 mots","24 palavras":"24 mots","Copiar":"Copier","Mostrar":"Afficher","Ocultar":"Masquer","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"Les mots sont dérivés du mot de passe et non générés aléatoirement. Le portefeuille BIP39 est distinct des clés Nostr.","Identidade pública · npub":"Identité publique · npub","Chave privada · nsec · não compartilhe":"Clé privée · nsec · ne pas partager","Segurança":"Sécurité","← nova senha":"← nouveau mot de passe","configurações":"paramètres","aparência":"apparence","☀ claro":"☀ clair","☾ escuro":"☾ sombre","fechar":"fermer","idioma":"langue","• Use uma senha longa, aleatória e exclusiva.":"• Utilisez un mot de passe long, aléatoire et unique.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• Le même mot de passe et les mêmes paramètres génèrent les mêmes clés.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Ne partagez jamais votre mot de passe, vos clés privées ou vos mots de récupération.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Toute personne ayant vos clés privées peut contrôler vos bitcoins.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• Cette application est expérimentale. N’utilisez pas de fonds réels avant validation de sa sécurité.","muito fraca":"très faible","fraca":"faible","razoável":"moyenne","forte":"forte","muito forte":"très forte","Estimativa apenas; não garante segurança.":"Simple estimation ; aucune garantie de sécurité.","Evite senhas comuns, curtas ou repetitivas.":"Évitez les mots de passe courants, courts ou répétitifs.","Use uma frase mais longa e imprevisível.":"Utilisez une phrase plus longue et imprévisible.","Evite padrões e aumente a imprevisibilidade.":"Évitez les motifs prévisibles.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"Cette information est secrète. La copier peut l’exposer à d’autres applications. Continuer ?","Nenhum conteúdo disponível para copiar.":"Aucun contenu à copier.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Copie automatique impossible. Ouvrez le fichier dans un contexte sécurisé ou sélectionnez le texte manuellement.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"Ce navigateur ne permet pas la copie automatique depuis ce fichier local.","Copiado":"Copié"},"de":{"uma frase secreta → suas chaves Bitcoin e Nostr":"eine geheime Phrase → deine Bitcoin- und Nostr-Schlüssel","senha secreta":"Geheimes Passwort","Digite sua senha secreta":"Geheimes Passwort eingeben","força":"Stärke","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Wichtig: Die Passwortstärke ist nur eine Schätzung. Balken und Prozentwerte sind visuelle Hinweise, keine Sicherheitswahrscheinlichkeiten und keine Garantie gegen Angriffe.","→ Gerar Chave":"→ Schlüssel erzeugen","derivando chaves · processando":"deriving keys · processing","Endereço SegWit BIP84":"SegWit-BIP84-Adresse","Endereço legado":"Legacy-Adresse","Chave privada WIF · não compartilhe":"WIF private key · do not share","Frase de recuperação BIP39 · não compartilhe":"BIP39 recovery phrase · do not share","12 palavras":"12 Wörter","24 palavras":"24 Wörter","Copiar":"Kopieren","Mostrar":"Anzeigen","Ocultar":"Verbergen","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"Öffentliche Identität · npub","Chave privada · nsec · não compartilhe":"Private key · nsec · do not share","Segurança":"Sicherheit","← nova senha":"← neues Passwort","configurações":"Einstellungen","aparência":"Darstellung","☀ claro":"☀ hell","☾ escuro":"☾ dunkel","fechar":"Schließen","idioma":"Sprache","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"sehr schwach","fraca":"schwach","razoável":"mittel","forte":"stark","muito forte":"sehr stark","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"it":{"uma frase secreta → suas chaves Bitcoin e Nostr":"una frase segreta → le tue chiavi Bitcoin e Nostr","senha secreta":"Password segreta","Digite sua senha secreta":"Inserisci la password segreta","força":"robustezza","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Importante: la robustezza della password è solo una stima. Le percentuali sono indicatori visivi, non probabilità di sicurezza né garanzie contro gli attacchi.","→ Gerar Chave":"→ Genera chiavi","derivando chaves · processando":"deriving keys · processing","Endereço SegWit BIP84":"Indirizzo SegWit BIP84","Endereço legado":"Indirizzo legacy","Chave privada WIF · não compartilhe":"WIF private key · do not share","Frase de recuperação BIP39 · não compartilhe":"BIP39 recovery phrase · do not share","12 palavras":"12 parole","24 palavras":"24 parole","Copiar":"Copia","Mostrar":"Mostra","Ocultar":"Nascondi","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"Identità pubblica · npub","Chave privada · nsec · não compartilhe":"Private key · nsec · do not share","Segurança":"Sicurezza","← nova senha":"← nuova password","configurações":"impostazioni","aparência":"aspetto","☀ claro":"☀ chiaro","☾ escuro":"☾ scuro","fechar":"chiudi","idioma":"lingua","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"molto debole","fraca":"debole","razoável":"discreta","forte":"forte","muito forte":"molto forte","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"nl":{"uma frase secreta → suas chaves Bitcoin e Nostr":"één geheime zin → je Bitcoin- en Nostr-sleutels","senha secreta":"Geheim wachtwoord","Digite sua senha secreta":"Voer uw geheime wachtwoord in","força":"sterkte","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Belangrijk: wachtwoordsterkte is slechts een schatting. Percentages zijn visuele indicatoren, geen veiligheidskansen of garanties tegen aanvallen.","→ Gerar Chave":"→ Sleutels genereren","derivando chaves · processando":"deriving keys · processing","Endereço SegWit BIP84":"SegWit BIP84-adres","Endereço legado":"Legacy-adres","Chave privada WIF · não compartilhe":"WIF private key · do not share","Frase de recuperação BIP39 · não compartilhe":"BIP39 recovery phrase · do not share","12 palavras":"12 woorden","24 palavras":"24 woorden","Copiar":"Kopiëren","Mostrar":"Tonen","Ocultar":"Verbergen","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"Openbare identiteit · npub","Chave privada · nsec · não compartilhe":"Private key · nsec · do not share","Segurança":"Veiligheid","← nova senha":"← nieuw wachtwoord","configurações":"instellingen","aparência":"weergave","☀ claro":"☀ licht","☾ escuro":"☾ donker","fechar":"sluiten","idioma":"taal","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"zeer zwak","fraca":"zwak","razoável":"redelijk","forte":"sterk","muito forte":"zeer sterk","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"ja":{"uma frase secreta → suas chaves Bitcoin e Nostr":"ひとつの秘密のフレーズ → Bitcoin と Nostr の鍵","senha secreta":"秘密のパスワード","Digite sua senha secreta":"秘密のパスワードを入力","força":"強度","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"重要：パスワード強度は推定値です。バーの割合は視覚的な目安であり、安全性の確率や攻撃への耐性を保証するものではありません。","→ Gerar Chave":"→ 鍵を生成","derivando chaves · processando":"deriving keys · processing","Endereço SegWit BIP84":"SegWit BIP84 アドレス","Endereço legado":"従来型アドレス","Chave privada WIF · não compartilhe":"WIF private key · do not share","Frase de recuperação BIP39 · não compartilhe":"BIP39 recovery phrase · do not share","12 palavras":"12単語","24 palavras":"24単語","Copiar":"コピー","Mostrar":"表示","Ocultar":"隠す","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"公開ID · npub","Chave privada · nsec · não compartilhe":"Private key · nsec · do not share","Segurança":"セキュリティ","← nova senha":"← 新しいパスワード","configurações":"設定","aparência":"外観","☀ claro":"☀ ライト","☾ escuro":"☾ ダーク","fechar":"閉じる","idioma":"言語","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"非常に弱い","fraca":"弱い","razoável":"普通","forte":"強い","muito forte":"非常に強い","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"ru":{"uma frase secreta → suas chaves Bitcoin e Nostr":"одна секретная фраза → ваши ключи Bitcoin и Nostr","senha secreta":"секретный пароль","Digite sua senha secreta":"Введите секретный пароль","força":"надёжность","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Важно: оценка надёжности пароля приблизительна. Проценты на шкале — только визуальный индикатор, не вероятность безопасности и не гарантия защиты.","→ Gerar Chave":"→ Создать ключи","derivando chaves · processando":"создание ключей · обработка","Endereço SegWit BIP84":"Адрес SegWit BIP84","Endereço legado":"Устаревший адрес","Chave privada WIF · não compartilhe":"Приватный ключ WIF · не передавайте","Frase de recuperação BIP39 · não compartilhe":"Фраза восстановления BIP39 · не передавайте","12 palavras":"12 слов","24 palavras":"24 слова","Copiar":"Копировать","Mostrar":"Показать","Ocultar":"Скрыть","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"Публичный идентификатор · npub","Chave privada · nsec · não compartilhe":"Приватный ключ · nsec · не передавайте","Segurança":"Безопасность","← nova senha":"← новый пароль","configurações":"настройки","aparência":"оформление","☀ claro":"☀ светлая","☾ escuro":"☾ тёмная","fechar":"закрыть","idioma":"язык","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"очень слабый","fraca":"слабый","razoável":"средний","forte":"сильный","muito forte":"очень сильный","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"zh":{"uma frase secreta → suas chaves Bitcoin e Nostr":"一个秘密短语 → 您的 Bitcoin 和 Nostr 密钥","senha secreta":"秘密密码","Digite sua senha secreta":"输入秘密密码","força":"强度","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"重要：密码强度仅为估计值。进度条百分比只是视觉指示，并非安全概率，也不能保证抵御攻击。","→ Gerar Chave":"→ 生成密钥","derivando chaves · processando":"正在派生密钥 · 处理中","Endereço SegWit BIP84":"SegWit BIP84 地址","Endereço legado":"传统地址","Chave privada WIF · não compartilhe":"WIF 私钥 · 请勿分享","Frase de recuperação BIP39 · não compartilhe":"BIP39 恢复短语 · 请勿分享","12 palavras":"12 个单词","24 palavras":"24 个单词","Copiar":"复制","Mostrar":"显示","Ocultar":"隐藏","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"公开身份 · npub","Chave privada · nsec · não compartilhe":"私钥 · nsec · 请勿分享","Segurança":"安全","← nova senha":"← 新密码","configurações":"设置","aparência":"外观","☀ claro":"☀ 浅色","☾ escuro":"☾ 深色","fechar":"关闭","idioma":"语言","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"非常弱","fraca":"弱","razoável":"一般","forte":"强","muito forte":"非常强","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"ko":{"uma frase secreta → suas chaves Bitcoin e Nostr":"하나의 비밀 문구 → Bitcoin 및 Nostr 키","senha secreta":"비밀 암호","Digite sua senha secreta":"비밀 암호 입력","força":"강도","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"중요: 암호 강도는 추정치입니다. 막대의 백분율은 시각적 표시일 뿐 보안 확률이나 공격 방어를 보장하지 않습니다.","→ Gerar Chave":"→ 키 생성","derivando chaves · processando":"키 생성 중 · 처리 중","Endereço SegWit BIP84":"SegWit BIP84 주소","Endereço legado":"레거시 주소","Chave privada WIF · não compartilhe":"WIF 개인 키 · 공유 금지","Frase de recuperação BIP39 · não compartilhe":"BIP39 복구 문구 · 공유 금지","12 palavras":"12개 단어","24 palavras":"24개 단어","Copiar":"복사","Mostrar":"표시","Ocultar":"숨기기","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"공개 신원 · npub","Chave privada · nsec · não compartilhe":"개인 키 · nsec · 공유 금지","Segurança":"보안","← nova senha":"← 새 암호","configurações":"설정","aparência":"모양","☀ claro":"☀ 밝게","☾ escuro":"☾ 어둡게","fechar":"닫기","idioma":"언어","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"매우 약함","fraca":"약함","razoável":"보통","forte":"강함","muito forte":"매우 강함","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"tr":{"uma frase secreta → suas chaves Bitcoin e Nostr":"bir gizli ifade → Bitcoin ve Nostr anahtarlarınız","senha secreta":"gizli parola","Digite sua senha secreta":"Gizli parolanızı girin","força":"güç","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Önemli: parola gücü yalnızca bir tahmindir. Çubuk yüzdeleri görsel göstergelerdir; güvenlik olasılığı veya saldırılara karşı garanti değildir.","→ Gerar Chave":"→ Anahtarları oluştur","derivando chaves · processando":"anahtarlar türetiliyor · işleniyor","Endereço SegWit BIP84":"SegWit BIP84 adresi","Endereço legado":"Eski adres","Chave privada WIF · não compartilhe":"WIF özel anahtarı · paylaşmayın","Frase de recuperação BIP39 · não compartilhe":"BIP39 kurtarma ifadesi · paylaşmayın","12 palavras":"12 kelime","24 palavras":"24 kelime","Copiar":"Kopyala","Mostrar":"Göster","Ocultar":"Gizle","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"Genel kimlik · npub","Chave privada · nsec · não compartilhe":"Özel anahtar · nsec · paylaşmayın","Segurança":"Güvenlik","← nova senha":"← yeni parola","configurações":"ayarlar","aparência":"görünüm","☀ claro":"☀ açık","☾ escuro":"☾ koyu","fechar":"kapat","idioma":"dil","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"çok zayıf","fraca":"zayıf","razoável":"orta","forte":"güçlü","muito forte":"çok güçlü","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"hi":{"uma frase secreta → suas chaves Bitcoin e Nostr":"एक गुप्त वाक्यांश → आपकी Bitcoin और Nostr कुंजियाँ","senha secreta":"गुप्त पासवर्ड","Digite sua senha secreta":"अपना गुप्त पासवर्ड दर्ज करें","força":"मज़बूती","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"महत्वपूर्ण: पासवर्ड की मज़बूती केवल एक अनुमान है। बार के प्रतिशत केवल दृश्य संकेतक हैं, सुरक्षा की संभावना या हमलों से सुरक्षा की गारंटी नहीं।","→ Gerar Chave":"→ कुंजियाँ बनाएँ","derivando chaves · processando":"कुंजियाँ तैयार हो रही हैं","Endereço SegWit BIP84":"SegWit BIP84 पता","Endereço legado":"पुराना पता","Chave privada WIF · não compartilhe":"WIF निजी कुंजी · साझा न करें","Frase de recuperação BIP39 · não compartilhe":"BIP39 रिकवरी वाक्यांश · साझा न करें","12 palavras":"12 शब्द","24 palavras":"24 शब्द","Copiar":"कॉपी करें","Mostrar":"दिखाएँ","Ocultar":"छिपाएँ","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"सार्वजनिक पहचान · npub","Chave privada · nsec · não compartilhe":"निजी कुंजी · nsec · साझा न करें","Segurança":"सुरक्षा","← nova senha":"← नया पासवर्ड","configurações":"सेटिंग्स","aparência":"दिखावट","☀ claro":"☀ हल्का","☾ escuro":"☾ गहरा","fechar":"बंद करें","idioma":"भाषा","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"बहुत कमज़ोर","fraca":"कमज़ोर","razoável":"सामान्य","forte":"मज़बूत","muito forte":"बहुत मज़बूत","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"ar":{"uma frase secreta → suas chaves Bitcoin e Nostr":"عبارة سرية واحدة ← مفاتيح Bitcoin وNostr","senha secreta":"كلمة المرور السرية","Digite sua senha secreta":"أدخل كلمة المرور السرية","força":"القوة","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"مهم: قوة كلمة المرور مجرد تقدير. نسب الشريط مؤشرات مرئية وليست احتمالات للأمان ولا ضمانًا للحماية من الهجمات.","→ Gerar Chave":"← إنشاء المفاتيح","derivando chaves · processando":"جارٍ اشتقاق المفاتيح","Endereço SegWit BIP84":"عنوان SegWit BIP84","Endereço legado":"العنوان القديم","Chave privada WIF · não compartilhe":"مفتاح WIF الخاص · لا تشاركه","Frase de recuperação BIP39 · não compartilhe":"عبارة استرداد BIP39 · لا تشاركها","12 palavras":"12 كلمة","24 palavras":"24 كلمة","Copiar":"نسخ","Mostrar":"إظهار","Ocultar":"إخفاء","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"الهوية العامة · npub","Chave privada · nsec · não compartilhe":"المفتاح الخاص · nsec · لا تشاركه","Segurança":"الأمان","← nova senha":"← كلمة مرور جديدة","configurações":"الإعدادات","aparência":"المظهر","☀ claro":"☀ فاتح","☾ escuro":"☾ داكن","fechar":"إغلاق","idioma":"اللغة","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"ضعيفة جدًا","fraca":"ضعيفة","razoável":"متوسطة","forte":"قوية","muito forte":"قوية جدًا","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"uk":{"uma frase secreta → suas chaves Bitcoin e Nostr":"одна секретна фраза → ваші ключі Bitcoin і Nostr","senha secreta":"секретний пароль","Digite sua senha secreta":"Введіть секретний пароль","força":"надійність","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Важливо: надійність пароля — лише оцінка. Відсотки шкали є візуальними показниками, а не ймовірністю безпеки чи гарантією захисту.","→ Gerar Chave":"→ Створити ключі","derivando chaves · processando":"створення ключів · обробка","Endereço SegWit BIP84":"Адреса SegWit BIP84","Endereço legado":"Застаріла адреса","Chave privada WIF · não compartilhe":"Приватний ключ WIF · не поширюйте","Frase de recuperação BIP39 · não compartilhe":"Фраза відновлення BIP39 · не поширюйте","12 palavras":"12 слів","24 palavras":"24 слова","Copiar":"Копіювати","Mostrar":"Показати","Ocultar":"Приховати","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"Слова походять від пароля, а не створюються випадково. Гаманець BIP39 відокремлений від ключів Nostr.","Identidade pública · npub":"Публічний ідентифікатор · npub","Chave privada · nsec · não compartilhe":"Приватний ключ · nsec · не поширюйте","Segurança":"Безпека","← nova senha":"← новий пароль","configurações":"налаштування","aparência":"вигляд","☀ claro":"☀ світла","☾ escuro":"☾ темна","fechar":"закрити","idioma":"мова","• Use uma senha longa, aleatória e exclusiva.":"• Використовуйте довгий, випадковий та унікальний пароль.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• Однаковий пароль і параметри завжди створюють однакові ключі.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Ніколи не передавайте пароль, приватні ключі чи слова відновлення.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Той, хто має ваші приватні ключі, може керувати вашими біткоїнами.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• Цей застосунок експериментальний. Не використовуйте реальні кошти до перевірки безпеки.","muito fraca":"дуже слабкий","fraca":"слабкий","razoável":"середній","forte":"сильний","muito forte":"дуже сильний","Estimativa apenas; não garante segurança.":"Лише оцінка; безпека не гарантована.","Evite senhas comuns, curtas ou repetitivas.":"Уникайте поширених, коротких або повторюваних паролів.","Use uma frase mais longa e imprevisível.":"Використовуйте довшу й непередбачувану фразу.","Evite padrões e aumente a imprevisibilidade.":"Уникайте шаблонів та підвищуйте непередбачуваність.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"Це секретні дані. Копіювання може відкрити їх іншим застосункам. Продовжити?","Nenhum conteúdo disponível para copiar.":"Немає даних для копіювання.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Не вдалося автоматично скопіювати. Відкрийте файл у безпечному середовищі або виділіть текст вручну.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"Цей браузер не дозволяє автоматичне копіювання з локального файлу.","Copiado":"Скопійовано"},"pl":{"uma frase secreta → suas chaves Bitcoin e Nostr":"jedna tajna fraza → Twoje klucze Bitcoin i Nostr","senha secreta":"tajne hasło","Digite sua senha secreta":"Wpisz tajne hasło","força":"siła","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Ważne: siła hasła jest tylko szacunkiem. Procenty paska to wskaźniki wizualne, a nie prawdopodobieństwo bezpieczeństwa ani gwarancja ochrony.","→ Gerar Chave":"→ Generuj klucze","derivando chaves · processando":"wyprowadzanie kluczy · przetwarzanie","Endereço SegWit BIP84":"Adres SegWit BIP84","Endereço legado":"Starszy adres","Chave privada WIF · não compartilhe":"Klucz prywatny WIF · nie udostępniaj","Frase de recuperação BIP39 · não compartilhe":"Fraza odzyskiwania BIP39 · nie udostępniaj","12 palavras":"12 słów","24 palavras":"24 słowa","Copiar":"Kopiuj","Mostrar":"Pokaż","Ocultar":"Ukryj","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"Public identity · npub","Chave privada · nsec · não compartilhe":"Private key · nsec · do not share","Segurança":"Security","← nova senha":"← new password","configurações":"settings","aparência":"appearance","☀ claro":"☀ light","☾ escuro":"☾ dark","fechar":"close","idioma":"language","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"very weak","fraca":"weak","razoável":"fair","forte":"strong","muito forte":"very strong","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"cs":{"uma frase secreta → suas chaves Bitcoin e Nostr":"jedna tajná fráze → vaše klíče Bitcoin a Nostr","senha secreta":"tajné heslo","Digite sua senha secreta":"Zadejte tajné heslo","força":"síla","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Důležité: síla hesla je pouze odhad. Procenta ukazatele jsou jen vizuální, nikoli pravděpodobnost bezpečnosti či záruka ochrany.","→ Gerar Chave":"→ Vygenerovat klíče","derivando chaves · processando":"odvozování klíčů · zpracování","Endereço SegWit BIP84":"Adresa SegWit BIP84","Endereço legado":"Starší adresa","Chave privada WIF · não compartilhe":"Soukromý klíč WIF · nesdílejte","Frase de recuperação BIP39 · não compartilhe":"Obnovovací fráze BIP39 · nesdílejte","12 palavras":"12 slov","24 palavras":"24 slov","Copiar":"Kopírovat","Mostrar":"Zobrazit","Ocultar":"Skrýt","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"Public identity · npub","Chave privada · nsec · não compartilhe":"Private key · nsec · do not share","Segurança":"Security","← nova senha":"← new password","configurações":"settings","aparência":"appearance","☀ claro":"☀ light","☾ escuro":"☾ dark","fechar":"close","idioma":"language","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"very weak","fraca":"weak","razoável":"fair","forte":"strong","muito forte":"very strong","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"ro":{"uma frase secreta → suas chaves Bitcoin e Nostr":"o frază secretă → cheile tale Bitcoin și Nostr","senha secreta":"parolă secretă","Digite sua senha secreta":"Introdu parola secretă","força":"putere","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Important: puterea parolei este doar o estimare. Procentele barei sunt indicatori vizuali, nu probabilități de securitate sau garanții.","→ Gerar Chave":"→ Generează cheile","derivando chaves · processando":"derivare chei · procesare","Endereço SegWit BIP84":"Adresă SegWit BIP84","Endereço legado":"Adresă veche","Chave privada WIF · não compartilhe":"Cheie privată WIF · nu distribui","Frase de recuperação BIP39 · não compartilhe":"Frază de recuperare BIP39 · nu distribui","12 palavras":"12 cuvinte","24 palavras":"24 de cuvinte","Copiar":"Copiază","Mostrar":"Arată","Ocultar":"Ascunde","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"Public identity · npub","Chave privada · nsec · não compartilhe":"Private key · nsec · do not share","Segurança":"Security","← nova senha":"← new password","configurações":"settings","aparência":"appearance","☀ claro":"☀ light","☾ escuro":"☾ dark","fechar":"close","idioma":"language","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"very weak","fraca":"weak","razoável":"fair","forte":"strong","muito forte":"very strong","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"sv":{"uma frase secreta → suas chaves Bitcoin e Nostr":"en hemlig fras → dina Bitcoin- och Nostr-nycklar","senha secreta":"hemligt lösenord","Digite sua senha secreta":"Ange ditt hemliga lösenord","força":"styrka","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Viktigt: lösenordsstyrkan är bara en uppskattning. Stapelns procenttal är visuella indikatorer, inte säkerhetssannolikheter eller garantier.","→ Gerar Chave":"→ Skapa nycklar","derivando chaves · processando":"härleder nycklar · bearbetar","Endereço SegWit BIP84":"SegWit BIP84-adress","Endereço legado":"Äldre adress","Chave privada WIF · não compartilhe":"Privat WIF-nyckel · dela inte","Frase de recuperação BIP39 · não compartilhe":"BIP39-återställningsfras · dela inte","12 palavras":"12 ord","24 palavras":"24 ord","Copiar":"Kopiera","Mostrar":"Visa","Ocultar":"Dölj","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"Public identity · npub","Chave privada · nsec · não compartilhe":"Private key · nsec · do not share","Segurança":"Security","← nova senha":"← new password","configurações":"settings","aparência":"appearance","☀ claro":"☀ light","☾ escuro":"☾ dark","fechar":"close","idioma":"language","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"very weak","fraca":"weak","razoável":"fair","forte":"strong","muito forte":"very strong","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"},"id":{"uma frase secreta → suas chaves Bitcoin e Nostr":"satu frasa rahasia → kunci Bitcoin dan Nostr Anda","senha secreta":"kata sandi rahasia","Digite sua senha secreta":"Masukkan kata sandi rahasia","força":"kekuatan","Importante: a força da senha é apenas uma estimativa. As classificações e os percentuais da barra são indicadores visuais, não representam probabilidades de segurança e não garantem proteção contra ataques.":"Penting: kekuatan kata sandi hanyalah perkiraan. Persentase bilah adalah indikator visual, bukan peluang keamanan atau jaminan perlindungan.","→ Gerar Chave":"→ Buat kunci","derivando chaves · processando":"menurunkan kunci · memproses","Endereço SegWit BIP84":"Alamat SegWit BIP84","Endereço legado":"Alamat lama","Chave privada WIF · não compartilhe":"Kunci privat WIF · jangan bagikan","Frase de recuperação BIP39 · não compartilhe":"Frasa pemulihan BIP39 · jangan bagikan","12 palavras":"12 kata","24 palavras":"24 kata","Copiar":"Salin","Mostrar":"Tampilkan","Ocultar":"Sembunyikan","As palavras são derivadas da senha, não geradas aleatoriamente. A carteira BIP39 é separada das chaves Nostr.":"The words are derived from your password, not generated randomly. The BIP39 wallet is separate from Nostr keys.","Identidade pública · npub":"Public identity · npub","Chave privada · nsec · não compartilhe":"Private key · nsec · do not share","Segurança":"Security","← nova senha":"← new password","configurações":"settings","aparência":"appearance","☀ claro":"☀ light","☾ escuro":"☾ dark","fechar":"close","idioma":"language","• Use uma senha longa, aleatória e exclusiva.":"• Use a long, random, unique password.","• A mesma senha gera sempre as mesmas chaves, com os mesmos parâmetros.":"• The same password and parameters always produce the same keys.","• Nunca compartilhe sua senha, chaves privadas ou palavras de recuperação.":"• Never share your password, private keys, or recovery words.","• Quem tiver acesso às suas chaves privadas poderá controlar seus bitcoins.":"• Anyone with your private keys can control your bitcoin.","• Este aplicativo é experimental. Não utilize fundos reais até que sua segurança seja validada.":"• This app is experimental. Do not use real funds until its security is validated.","muito fraca":"very weak","fraca":"weak","razoável":"fair","forte":"strong","muito forte":"very strong","Estimativa apenas; não garante segurança.":"Estimate only; does not guarantee security.","Evite senhas comuns, curtas ou repetitivas.":"Avoid common, short, or repetitive passwords.","Use uma frase mais longa e imprevisível.":"Use a longer, less predictable phrase.","Evite padrões e aumente a imprevisibilidade.":"Avoid patterns and increase unpredictability.","Este é um segredo. Copiar pode expô-lo a outros aplicativos. Deseja continuar?":"This is secret information. Copying may expose it to other apps. Continue?","Nenhum conteúdo disponível para copiar.":"Nothing available to copy.","Não foi possível copiar automaticamente neste navegador. Abra o arquivo em um contexto seguro ou selecione o texto manualmente.":"Automatic copying failed in this browser. Open in a secure context or select the text manually.","Este navegador não permite copiar automaticamente a partir deste arquivo local.":"This browser does not allow automatic copying from this local file.","Copiado":"Copied"}};
+
+// Additional interface languages (remaining messages fall back to English).
+Object.assign(translations, {"vi":{"uma frase secreta → suas chaves Bitcoin e Nostr":"một mật khẩu → khóa Bitcoin và Nostr của bạn","senha secreta":"mật khẩu bí mật","Digite sua senha secreta":"Nhập mật khẩu bí mật","força":"độ mạnh","→ Gerar Chave":"→ Tạo khóa","derivando chaves · processando":"đang tạo khóa · xử lý","Copiar":"Sao chép","Mostrar":"Hiện","Ocultar":"Ẩn","Segurança":"Bảo mật","← nova senha":"← mật khẩu mới","configurações":"cài đặt","aparência":"giao diện","fechar":"đóng","idioma":"ngôn ngữ","muito fraca":"rất yếu","muito forte":"rất mạnh"},"th":{"uma frase secreta → suas chaves Bitcoin e Nostr":"รหัสผ่านเดียว → กุญแจ Bitcoin และ Nostr","senha secreta":"รหัสผ่านลับ","Digite sua senha secreta":"ป้อนรหัสผ่านลับ","força":"ความแข็งแกร่ง","→ Gerar Chave":"→ สร้างกุญแจ","derivando chaves · processando":"กำลังสร้างกุญแจ","Copiar":"คัดลอก","Mostrar":"แสดง","Ocultar":"ซ่อน","Segurança":"ความปลอดภัย","← nova senha":"← รหัสผ่านใหม่","configurações":"การตั้งค่า","aparência":"รูปลักษณ์","fechar":"ปิด","idioma":"ภาษา","muito fraca":"อ่อนแอมาก","muito forte":"แข็งแกร่งมาก"},"el":{"uma frase secreta → suas chaves Bitcoin e Nostr":"ένας κωδικός → κλειδιά Bitcoin και Nostr","senha secreta":"μυστικός κωδικός","Digite sua senha secreta":"Εισάγετε τον μυστικό κωδικό","força":"ισχύς","→ Gerar Chave":"→ Δημιουργία κλειδιών","derivando chaves · processando":"δημιουργία κλειδιών","Copiar":"Αντιγραφή","Mostrar":"Εμφάνιση","Ocultar":"Απόκρυψη","Segurança":"Ασφάλεια","← nova senha":"← νέος κωδικός","configurações":"ρυθμίσεις","aparência":"εμφάνιση","fechar":"κλείσιμο","idioma":"γλώσσα","muito fraca":"πολύ αδύναμος","muito forte":"πολύ ισχυρός"},"he":{"uma frase secreta → suas chaves Bitcoin e Nostr":"סיסמה אחת → מפתחות Bitcoin ו-Nostr","senha secreta":"סיסמה סודית","Digite sua senha secreta":"הזן סיסמה סודית","força":"חוזק","→ Gerar Chave":"→ יצירת מפתחות","derivando chaves · processando":"מפיק מפתחות","Copiar":"העתק","Mostrar":"הצג","Ocultar":"הסתר","Segurança":"אבטחה","← nova senha":"← סיסמה חדשה","configurações":"הגדרות","aparência":"מראה","fechar":"סגור","idioma":"שפה","muito fraca":"חלשה מאוד","muito forte":"חזקה מאוד"},"fa":{"uma frase secreta → suas chaves Bitcoin e Nostr":"یک گذرواژه ← کلیدهای بیت‌کوین و نوستر","senha secreta":"گذرواژه محرمانه","Digite sua senha secreta":"گذرواژه را وارد کنید","força":"قدرت","→ Gerar Chave":"← ساخت کلیدها","derivando chaves · processando":"در حال ساخت کلیدها","Copiar":"کپی","Mostrar":"نمایش","Ocultar":"پنهان","Segurança":"امنیت","← nova senha":"گذرواژه جدید","configurações":"تنظیمات","aparência":"ظاهر","fechar":"بستن","idioma":"زبان","muito fraca":"بسیار ضعیف","muito forte":"بسیار قوی"},"bn":{"uma frase secreta → suas chaves Bitcoin e Nostr":"একটি পাসওয়ার্ড → Bitcoin ও Nostr কী","senha secreta":"গোপন পাসওয়ার্ড","Digite sua senha secreta":"গোপন পাসওয়ার্ড লিখুন","força":"শক্তি","→ Gerar Chave":"→ কী তৈরি করুন","derivando chaves · processando":"কী তৈরি হচ্ছে","Copiar":"কপি","Mostrar":"দেখান","Ocultar":"লুকান","Segurança":"নিরাপত্তা","← nova senha":"← নতুন পাসওয়ার্ড","configurações":"সেটিংস","aparência":"চেহারা","fechar":"বন্ধ","idioma":"ভাষা","muito fraca":"খুব দুর্বল","muito forte":"খুব শক্তিশালী"},"ur":{"uma frase secreta → suas chaves Bitcoin e Nostr":"ایک پاس ورڈ → Bitcoin اور Nostr کی چابیاں","senha secreta":"خفیہ پاس ورڈ","Digite sua senha secreta":"خفیہ پاس ورڈ درج کریں","força":"مضبوطی","→ Gerar Chave":"← چابیاں بنائیں","derivando chaves · processando":"چابیاں بن رہی ہیں","Copiar":"کاپی","Mostrar":"دکھائیں","Ocultar":"چھپائیں","Segurança":"سیکیورٹی","← nova senha":"نیا پاس ورڈ","configurações":"ترتیبات","aparência":"ظاہری شکل","fechar":"بند کریں","idioma":"زبان","muito fraca":"بہت کمزور","muito forte":"بہت مضبوط"},"sw":{"uma frase secreta → suas chaves Bitcoin e Nostr":"nenosiri moja → funguo za Bitcoin na Nostr","senha secreta":"nenosiri la siri","Digite sua senha secreta":"Weka nenosiri lako","força":"nguvu","→ Gerar Chave":"→ Tengeneza funguo","derivando chaves · processando":"inatengeneza funguo","Copiar":"Nakili","Mostrar":"Onyesha","Ocultar":"Ficha","Segurança":"Usalama","← nova senha":"← nenosiri jipya","configurações":"mipangilio","aparência":"mwonekano","fechar":"funga","idioma":"lugha","muito fraca":"dhaifu sana","muito forte":"imara sana"},"fi":{"uma frase secreta → suas chaves Bitcoin e Nostr":"yksi salasana → Bitcoin- ja Nostr-avaimet","senha secreta":"salainen salasana","Digite sua senha secreta":"Syötä salainen salasana","força":"vahvuus","→ Gerar Chave":"→ Luo avaimet","derivando chaves · processando":"avaimia luodaan","Copiar":"Kopioi","Mostrar":"Näytä","Ocultar":"Piilota","Segurança":"Turvallisuus","← nova senha":"← uusi salasana","configurações":"asetukset","aparência":"ulkoasu","fechar":"sulje","idioma":"kieli","muito fraca":"erittäin heikko","muito forte":"erittäin vahva"},"da":{"uma frase secreta → suas chaves Bitcoin e Nostr":"én adgangskode → Bitcoin- og Nostr-nøgler","senha secreta":"hemmelig adgangskode","Digite sua senha secreta":"Indtast hemmelig adgangskode","força":"styrke","→ Gerar Chave":"→ Opret nøgler","derivando chaves · processando":"opretter nøgler","Copiar":"Kopiér","Mostrar":"Vis","Ocultar":"Skjul","Segurança":"Sikkerhed","← nova senha":"← ny adgangskode","configurações":"indstillinger","aparência":"udseende","fechar":"luk","idioma":"sprog","muito fraca":"meget svag","muito forte":"meget stærk"}});
+
+let currentLanguage='en';
+const originalTextNodes=[];
+const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+while(walker.nextNode()){
+ const node=walker.currentNode;
+ if(node.parentElement.closest('script,style,option'))continue;
+ const raw=node.nodeValue,trimmed=raw.trim();
+ if(trimmed && Object.prototype.hasOwnProperty.call(translations.en,trimmed)) originalTextNodes.push([node,raw,trimmed]);
+}
+const originalPlaceholders=[...document.querySelectorAll('[placeholder]')].map(el=>[el,el.getAttribute('placeholder')]);
+function tr(key){
+ if(currentLanguage==='pt')return key;
+ return (translations[currentLanguage]||{})[key]||translations.en[key]||key;
+}
+function setLanguage(lang){
+ currentLanguage=Array.from(document.getElementById('homeLanguageSelect').options).some(option=>option.value===lang)?lang:'en';
+ document.documentElement.lang=currentLanguage==='pt'?'pt-BR':currentLanguage;
+ document.documentElement.dir=['ar','he','fa','ur','ps','sd','ug','yi'].includes(currentLanguage)?'rtl':'ltr';
+ document.getElementById('phrase').dir='ltr';
+ for(const [node,raw,key] of originalTextNodes)node.nodeValue=raw.replace(key,tr(key));
+ for(const [el,key] of originalPlaceholders)el.placeholder=tr(key);
+ document.querySelectorAll('.reveal-btn').forEach(btn=>btn.textContent=tr(btn.dataset.revealed==='true'?'Ocultar':'Mostrar'));
+ const current=assessPassword(phraseEl.value);
+ statusEl.textContent=current.level<0?'—':tr(['muito fraca','fraca','razoável','forte','muito forte'][current.level]);
+ document.getElementById('strengthHint').textContent=tr(current.hint);
+ document.getElementById('languageSelect').value=currentLanguage;
+ document.getElementById('homeLanguageSelect').value=currentLanguage;
+ try{localStorage.setItem('brainwallet_language',currentLanguage)}catch(e){}
+}
+document.getElementById('languageSelect').addEventListener('change',e=>setLanguage(e.target.value));
+document.getElementById('homeLanguageSelect').addEventListener('change',e=>setLanguage(e.target.value));
+try{setLanguage(localStorage.getItem('brainwallet_language')||'en')}catch(e){setLanguage('en')}
+</script>
+</body>
+</html>
