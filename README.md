@@ -1,76 +1,72 @@
 # Brainwallet
 
-**Uma senha secreta → chaves de Bitcoin e Nostr.**
+**One secret phrase → Bitcoin and Nostr keys.**
 
-O **Brainwallet** é um protótipo experimental, gratuito e de código aberto (licença MIT), desenvolvido em HTML e JavaScript. Ele deriva, de forma determinística, chaves de Bitcoin e Nostr a partir de uma senha secreta fornecida pelo usuário.
+**Brainwallet** is a free, open-source (MIT-licensed), experimental HTML/JavaScript prototype that deterministically derives Bitcoin and Nostr cryptographic keys from a user-provided secret phrase.
 
 > [!WARNING]
-> **Não utilize este aplicativo para guardar bitcoins reais.** O projeto **não foi auditado** e não é uma carteira validada para uso financeiro. Senhas escolhidas por pessoas podem ser previsíveis e vulneráveis a ataques de dicionário e força bruta. Nunca compartilhe senhas, chaves privadas ou frases de recuperação — nem em relatórios de bugs.
+> **Do not use Brainwallet to store real Bitcoin funds.** This project has **not been security audited** and is not a production-ready wallet. Human-chosen phrases may be predictable and vulnerable to dictionary or brute-force attacks. Never share your secret phrase, private keys, or recovery words—including in bug reports.
 
-## Conceito
+## Concept
 
-Em carteiras Bitcoin tradicionais, normalmente é gerada uma frase de recuperação aleatória que o usuário precisa guardar. O Brainwallet explora a ideia inversa: **o usuário escolhe uma frase ou senha secreta, e o aplicativo calcula as chaves correspondentes**.
+Traditional Bitcoin wallets typically generate a random recovery phrase that the user must keep safe. Brainwallet explores the reverse approach: **the user chooses a secret phrase, and the application calculates the corresponding keys**.
 
-A mesma entrada, com a mesma versão do algoritmo e os mesmos parâmetros, permite reconstruir as mesmas chaves. Isso **não significa que uma senha memorizada seja tão segura quanto uma frase aleatória gerada criptograficamente**.
+With identical input, algorithm versions, and parameters, the same keys can be reconstructed. **This does not make a memorized phrase as secure as a cryptographically random recovery phrase.**
 
-## Como funciona
+## How it works
 
 ```text
-          Senha secreta escolhida pelo usuário
+              User-chosen secret phrase
                          |
                       Argon2id
                          |
-              Material criptográfico
+               Derived key material
                          |
              +-----------+-----------+
              |                       |
           Bitcoin                   Nostr
-      Endereços e WIF           npub e nsec
+      Addresses + WIF           npub + nsec
              |
-         BIP39 opcional
-   12 ou 24 palavras derivadas
-     (carteira distinta)
+        Optional BIP39
+    Derived 12 or 24 words
+       (separate wallet)
 ```
 
-O **Argon2id** torna mais custoso testar tentativas de senha, mas **não impede** ataques contra segredos fracos. A derivação BIP39 opcional utiliza material obtido da mesma senha e cria uma carteira distinta das chaves Bitcoin derivadas diretamente e das chaves Nostr. **Essas palavras não são geradas com aleatoriedade independente.**
+**Argon2id** increases the computational cost of guessing a secret, but **cannot make a weak phrase safe**. The optional BIP39 mnemonic is derived from the same underlying secret and represents a wallet distinct from the directly derived Bitcoin keys and the Nostr identity. **The mnemonic words are not independently random.**
 
-## Funcionalidades
+## Features
 
-- **Bitcoin:** endereços Legacy e SegWit nativo, além de chave privada WIF.
-- **Nostr:** identidade pública `npub` e chave privada `nsec`.
-- **BIP39 opcional:** frases determinísticas de 12 ou 24 palavras, correspondentes a uma derivação separada.
-- **Interface:** 20 opções de idioma, temas claro/escuro, seções expansíveis e ocultação de dados sensíveis.
-- **Código aberto:** código-fonte disponível para estudo, modificação, verificação e contribuições.
+- **Bitcoin:** Legacy and native SegWit addresses, plus a WIF private key.
+- **Nostr:** public identity (`npub`) and private key (`nsec`).
+- **Optional BIP39:** deterministic 12- or 24-word mnemonics for a separate wallet derivation.
+- **Interface:** 20 language options, light/dark themes, expandable sections, and masked private values.
+- **Open source:** source code available for study, inspection, modification, and contributions.
 
-## Filosofia
+## Project principles
 
-1. **Simplicidade:** uma interface para explorar a derivação de chaves Bitcoin e Nostr.
-2. **Autonomia:** permitir ao usuário conhecer a relação entre a senha fornecida e as chaves obtidas.
-3. **Transparência:** publicar o código para inspeção independente e colaboração.
+1. **Simplicity:** a minimal interface for exploring Bitcoin and Nostr key derivation.
+2. **Autonomy:** help users understand how their input relates to the resulting cryptographic keys.
+3. **Transparency:** make implementation details available for independent inspection and collaboration.
 
-## Executar
+## Getting started
 
-1. Baixe o repositório usando **Code → Download ZIP**.
-2. Extraia o arquivo ZIP.
-3. Abra `index.html` no Google Chrome ou outro navegador moderno.
+1. Select **Code → Download ZIP** on this repository.
+2. Extract the ZIP archive.
+3. Open `index.html` in Google Chrome or another modern browser.
 
-A versão atual depende de conexão à internet para carregar algumas bibliotecas criptográficas externas e a lista de palavras BIP39 em inglês. **Não é totalmente offline.** O processamento de chaves ocorre no navegador, mas essa característica, por si só, **não constitui garantia de privacidade ou segurança**.
+The current version requires an internet connection to load some external cryptographic libraries and the English BIP39 word list. **It is not fully offline.** Key processing is performed in the browser, but this alone **does not guarantee privacy or security**.
 
-## Limitações e segurança
+## Security considerations and limitations
 
-- **Experimental e não auditado:** não utilizar com fundos reais.
-- **Senha humana não é aleatoriedade criptográfica:** o medidor de força é apenas uma estimativa visual e não garante resistência a ataques.
-- **Determinismo exige compatibilidade:** mudanças nos parâmetros ou algoritmos podem produzir chaves diferentes.
-- **Dependências externas:** bibliotecas e conteúdos obtidos na internet precisam de revisão e mecanismos de integridade antes de qualquer aplicação sensível.
-- **BIP39 derivado:** as palavras de recuperação não são independentes da senha original e não equivalem a uma frase gerada aleatoriamente por uma carteira tradicional.
-- **Revisão pendente:** a implementação criptográfica, a compatibilidade dos endereços e o tratamento de dados sensíveis requerem testes e auditoria independente.
+- **Experimental and unaudited:** do not use with real funds.
+- **Human-chosen secrets are not cryptographic randomness:** the password-strength indicator is only a visual estimate, not a guarantee against attacks.
+- **Deterministic compatibility:** changing algorithm versions or derivation parameters may produce different keys.
+- **External dependencies:** remotely loaded libraries and word lists require security review and integrity protections before sensitive use.
+- **Derived BIP39:** the recovery words depend on the original secret and are not equivalent to an independently generated random mnemonic.
+- **Independent review required:** the cryptographic implementation, address compatibility, and handling of sensitive values need thorough testing and external audit.
 
-Se identificar um problema, abra uma *Issue*, **sem incluir senhas, seeds, chaves privadas ou informações financeiras**.
+Found a problem? Please open an **Issue** without including passwords, seed phrases, private keys, or financial details.
 
-## Open source / English summary
+## License
 
-Brainwallet is an **experimental, unaudited**, single-page HTML/JavaScript project for deterministic Bitcoin and Nostr key derivation from a user-chosen secret via Argon2id. It supports Bitcoin Legacy/SegWit addresses and WIF, Nostr npub/nsec, and optional deterministically derived 12/24-word BIP39 mnemonics **for a separate wallet**. Human-memorable secrets can be guessable; **do not use with real funds**. Some libraries and word lists require an internet connection.
-
-## Licença
-
-Distribuído sob a licença **MIT**. Veja [LICENSE](LICENSE).
+Released under the **MIT License**. See [LICENSE](LICENSE).
